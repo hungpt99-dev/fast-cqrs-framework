@@ -17,8 +17,10 @@ public class SqlRepositoryProxyFactory {
     private static final Logger log = LoggerFactory.getLogger(SqlRepositoryProxyFactory.class);
 
     private final SqlExecutor sqlExecutor;
+    private final NamedParameterJdbcTemplate jdbcTemplate;
 
     public SqlRepositoryProxyFactory(NamedParameterJdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
         this.sqlExecutor = new SqlExecutor(jdbcTemplate);
     }
 
@@ -37,7 +39,8 @@ public class SqlRepositoryProxyFactory {
 
         SqlRepositoryInvocationHandler handler = new SqlRepositoryInvocationHandler(
             repositoryInterface,
-            sqlExecutor
+            sqlExecutor,
+            jdbcTemplate
         );
 
         return (T) Proxy.newProxyInstance(

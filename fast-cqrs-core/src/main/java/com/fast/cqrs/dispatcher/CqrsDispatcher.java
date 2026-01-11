@@ -173,6 +173,11 @@ public class CqrsDispatcher implements ApplicationContextAware {
     }
 
     private Object buildObjectFromParams(Class<?> targetClass, Object[] args) {
+        // If single argument matches target type, return it directly
+        if (args.length == 1 && args[0] != null && targetClass.isAssignableFrom(args[0].getClass())) {
+            return args[0];
+        }
+
         try {
             // Try constructor matching args
             for (Constructor<?> ctor : targetClass.getConstructors()) {
