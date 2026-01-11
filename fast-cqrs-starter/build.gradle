@@ -18,6 +18,9 @@ dependencies {
     // Utilities
     api project(':fast-cqrs-util')
     
+    // Concurrent (Virtual Threads)
+    api project(':fast-cqrs-concurrent')
+    
     // Spring Boot Starter Web (common dependency)
     api 'org.springframework.boot:spring-boot-starter-web'
     

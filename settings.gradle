@@ -5,5 +5,7 @@ include 'fast-cqrs-autoconfigure'
 include 'fast-cqrs-sql'
 include 'fast-cqrs-logging'
 include 'fast-cqrs-util'
+include 'fast-cqrs-concurrent'
 include 'fast-cqrs-starter'
+
 
