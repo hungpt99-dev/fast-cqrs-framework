@@ -32,7 +32,7 @@ public class CreateOrderHandler implements CommandHandler<CreateOrderCmd> {
     @Loggable("Creating new order")
     @Override
     public void handle(CreateOrderCmd cmd) {
-        String orderId = IdGenerator.prefixedId("ORD");
+        String orderId = cmd.orderId() != null ? cmd.orderId() : IdGenerator.prefixedId("ORD");
         
         Order order = new Order();
         order.setId(orderId);
