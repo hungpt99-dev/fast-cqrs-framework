@@ -12,9 +12,6 @@ dependencies {
     // SQL Repository
     api project(':fast-cqrs-sql')
     
-    // Modal/DTO Mapping
-    api project(':fast-cqrs-modal')
-    
     // Logging & Tracing
     api project(':fast-cqrs-logging')
     

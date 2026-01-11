@@ -16,9 +16,11 @@ Welcome to the Fast Framework documentation.
 | Module | Documentation |
 |--------|---------------|
 | CQRS Controllers | [CQRS.md](CQRS.md) |
+| FastRepository | [REPOSITORY.md](REPOSITORY.md) |
+| Features (Caching, Retry, etc.) | [FEATURES.md](FEATURES.md) |
+| Domain Events | [EVENTS.md](EVENTS.md) |
 | Security & Authorization | [SECURITY.md](SECURITY.md) |
 | SQL Repositories | [SQL.md](SQL.md) |
-| Modal/DTO Mapping | [MODAL.md](MODAL.md) |
 | Logging & Tracing | [LOGGING.md](LOGGING.md) |
 | Utilities | [UTIL.md](UTIL.md) |
 
