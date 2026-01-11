@@ -30,7 +30,7 @@ import org.springframework.context.annotation.Import;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@Import({CqrsRegistrarConfiguration.class, CqrsImportBeanDefinitionRegistrar.class})
+@Import({CqrsRegistrarConfiguration.class, HttpControllerRegistrar.class})
 public @interface EnableCqrs {
 
     /**

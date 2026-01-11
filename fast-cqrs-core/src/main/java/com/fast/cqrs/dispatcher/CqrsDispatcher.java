@@ -14,6 +14,8 @@ import org.springframework.context.ApplicationContext;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
+import org.springframework.context.ApplicationContextAware;
+
 /**
  * Central CQRS dispatcher that routes requests to the appropriate bus.
  * <p>
@@ -24,7 +26,7 @@ import java.lang.reflect.Method;
  *   <li>Auto-detection from method parameters</li>
  * </ul>
  */
-public class CqrsDispatcher {
+public class CqrsDispatcher implements ApplicationContextAware {
 
     private static final Logger log = LoggerFactory.getLogger(CqrsDispatcher.class);
 
@@ -37,6 +39,7 @@ public class CqrsDispatcher {
         this.queryBus = queryBus;
     }
 
+    @Override
     public void setApplicationContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
     }
@@ -71,7 +74,21 @@ public class CqrsDispatcher {
         // Option 1: Explicit handler class
         if (annotation.handler() != Query.DefaultHandler.class) {
             QueryHandler<Object, Object> handler = getHandler(annotation.handler());
-            Object query = buildQueryFromParams(annotation, context);
+            Object query;
+            
+            if (annotation.query() != Void.class) {
+                query = buildObjectFromParams(annotation.query(), context.arguments());
+            } else {
+                // Infer from handler generic type
+                Class<?> queryType = handler.getQueryType();
+                if (queryType != null && queryType != Object.class) {
+                    query = buildObjectFromParams(queryType, context.arguments());
+                } else {
+                    // Fallback to simpler auto-detection
+                     query = buildQueryFromParams(annotation, context);
+                }
+            }
+            
             return handler.handle(query);
         }
 
@@ -96,7 +113,20 @@ public class CqrsDispatcher {
         // Option 1: Explicit handler class
         if (annotation.handler() != Command.DefaultHandler.class) {
             CommandHandler<Object> handler = getHandler(annotation.handler());
-            Object command = buildCommandFromParams(annotation, context);
+            Object command;
+            
+            if (annotation.command() != Void.class) {
+                command = buildObjectFromParams(annotation.command(), context.arguments());
+            } else {
+                // Infer from handler generic type
+                Class<?> commandType = handler.getCommandType();
+                if (commandType != null && commandType != Object.class) {
+                    command = buildObjectFromParams(commandType, context.arguments());
+                } else {
+                    command = buildCommandFromParams(annotation, context);
+                }
+            }
+            
             handler.handle(command);
             return null;
         }

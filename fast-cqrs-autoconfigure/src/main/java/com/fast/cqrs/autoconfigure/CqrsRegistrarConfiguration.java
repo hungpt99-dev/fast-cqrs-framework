@@ -57,8 +57,10 @@ public class CqrsRegistrarConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(CqrsDispatcher.class)
-    public CqrsDispatcher cqrsDispatcher(CommandBus commandBus, QueryBus queryBus) {
-        return new CqrsDispatcher(commandBus, queryBus);
+    public CqrsDispatcher cqrsDispatcher(CommandBus commandBus, QueryBus queryBus, org.springframework.context.ApplicationContext context) {
+        CqrsDispatcher dispatcher = new CqrsDispatcher(commandBus, queryBus);
+        dispatcher.setApplicationContext(context);
+        return dispatcher;
     }
 
     /**

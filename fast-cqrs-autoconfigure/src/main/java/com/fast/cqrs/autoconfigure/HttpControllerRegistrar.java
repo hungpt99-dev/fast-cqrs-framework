@@ -4,52 +4,37 @@ import com.fast.cqrs.annotation.HttpController;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
-import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
-import org.springframework.core.env.Environment;
+import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
+import org.springframework.core.annotation.AnnotationAttributes;
+import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
 /**
  * Scans for {@code @HttpController} interfaces and registers them as Spring beans.
  * <p>
- * This post-processor scans the classpath for interfaces annotated with
- * {@link HttpController} and creates dynamic proxy beans for each one.
+ * Implements {@link ImportBeanDefinitionRegistrar} to read annotation metadata
+ * from {@code @EnableFast} or {@code @EnableCqrs}.
  */
-public class HttpControllerRegistrar implements BeanDefinitionRegistryPostProcessor, EnvironmentAware {
+public class HttpControllerRegistrar implements ImportBeanDefinitionRegistrar {
 
     private static final Logger log = LoggerFactory.getLogger(HttpControllerRegistrar.class);
 
-    private Environment environment;
-    private final Set<String> basePackages;
-
-    /**
-     * Creates a new registrar with the given base packages.
-     *
-     * @param basePackages the packages to scan
-     */
-    public HttpControllerRegistrar(Set<String> basePackages) {
-        this.basePackages = basePackages != null ? basePackages : new HashSet<>();
-    }
-
     @Override
-    public void setEnvironment(Environment environment) {
-        this.environment = environment;
-    }
+    public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata,
+                                        BeanDefinitionRegistry registry) {
 
-    @Override
-    public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
+        Set<String> basePackages = getBasePackages(importingClassMetadata);
         log.info("Scanning for @HttpController interfaces in packages: {}", basePackages);
 
         ClassPathScanningCandidateComponentProvider scanner = createScanner();
@@ -65,7 +50,7 @@ public class HttpControllerRegistrar implements BeanDefinitionRegistryPostProces
 
     private ClassPathScanningCandidateComponentProvider createScanner() {
         ClassPathScanningCandidateComponentProvider scanner = 
-            new ClassPathScanningCandidateComponentProvider(false, environment) {
+            new ClassPathScanningCandidateComponentProvider(false) {
                 @Override
                 protected boolean isCandidateComponent(AnnotatedBeanDefinition beanDefinition) {
                     // Accept interfaces (not just concrete classes)
@@ -90,6 +75,12 @@ public class HttpControllerRegistrar implements BeanDefinitionRegistryPostProces
             );
 
             String beanName = generateBeanName(controllerInterface);
+            int duplicateCount = 0;
+            String originalBeanName = beanName;
+            while (registry.containsBeanDefinition(beanName)) {
+                duplicateCount++;
+                beanName = originalBeanName + duplicateCount;
+            }
             
             GenericBeanDefinition beanDefinition = new GenericBeanDefinition();
             beanDefinition.setBeanClass(ControllerProxyFactoryBean.class);
@@ -112,8 +103,38 @@ public class HttpControllerRegistrar implements BeanDefinitionRegistryPostProces
         return Character.toLowerCase(simpleName.charAt(0)) + simpleName.substring(1);
     }
 
-    @Override
-    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
-        // No post-processing of bean factory needed
+    private Set<String> getBasePackages(AnnotationMetadata metadata) {
+        Set<String> basePackages = new HashSet<>();
+
+        // Try getting attributes from @EnableFast
+        AnnotationAttributes attributes = null;
+        if (metadata.hasAnnotation(EnableFast.class.getName())) {
+            attributes = AnnotationAttributes.fromMap(
+                metadata.getAnnotationAttributes(EnableFast.class.getName())
+            );
+        } else if (metadata.hasAnnotation(EnableCqrs.class.getName())) {
+            attributes = AnnotationAttributes.fromMap(
+                metadata.getAnnotationAttributes(EnableCqrs.class.getName())
+            );
+        }
+
+        if (attributes != null) {
+            String[] packages = attributes.getStringArray("basePackages");
+            basePackages.addAll(Arrays.asList(packages));
+            
+            // Handle basePackageClasses if present (EnableCqrs has it, EnableFast currently doesn't)
+            if (attributes.containsKey("basePackageClasses")) {
+                 Class<?>[] classes = attributes.getClassArray("basePackageClasses");
+                 for (Class<?> clazz : classes) {
+                     basePackages.add(ClassUtils.getPackageName(clazz));
+                 }
+            }
+        }
+
+        if (basePackages.isEmpty()) {
+            basePackages.add(ClassUtils.getPackageName(metadata.getClassName()));
+        }
+
+        return basePackages;
     }
 }

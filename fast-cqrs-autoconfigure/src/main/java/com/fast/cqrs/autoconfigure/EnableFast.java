@@ -1,5 +1,6 @@
 package com.fast.cqrs.autoconfigure;
 
+import com.fast.cqrs.sql.autoconfigure.SqlRepositoryImportRegistrar;
 import org.springframework.context.annotation.Import;
 
 import java.lang.annotation.ElementType;
@@ -35,7 +36,12 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@Import(FastAutoConfiguration.class)
+@Import({
+    FastAutoConfiguration.class,
+    CqrsRegistrarConfiguration.class,
+    HttpControllerRegistrar.class,
+    SqlRepositoryImportRegistrar.class
+})
 public @interface EnableFast {
     
     /**

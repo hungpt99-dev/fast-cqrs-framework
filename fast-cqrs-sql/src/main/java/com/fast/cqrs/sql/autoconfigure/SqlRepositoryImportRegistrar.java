@@ -1,5 +1,6 @@
 package com.fast.cqrs.sql.autoconfigure;
 
+
 import com.fast.cqrs.sql.annotation.SqlRepository;
 
 import org.slf4j.Logger;
@@ -30,16 +31,10 @@ public class SqlRepositoryImportRegistrar implements ImportBeanDefinitionRegistr
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata,
                                         BeanDefinitionRegistry registry) {
+        System.out.println("DEBUG: SqlRepositoryImportRegistrar running for " + importingClassMetadata.getClassName());
 
-        AnnotationAttributes attributes = AnnotationAttributes.fromMap(
-            importingClassMetadata.getAnnotationAttributes(EnableSqlRepositories.class.getName())
-        );
-
-        if (attributes == null) {
-            return;
-        }
-
-        Set<String> basePackages = getBasePackages(importingClassMetadata, attributes);
+        Set<String> basePackages = getBasePackages(importingClassMetadata);
+        System.out.println("DEBUG: Base packages: " + basePackages);
         log.info("Scanning for @SqlRepository interfaces in packages: {}", basePackages);
 
         ClassPathScanningCandidateComponentProvider scanner = createScanner();
@@ -95,15 +90,31 @@ public class SqlRepositoryImportRegistrar implements ImportBeanDefinitionRegistr
         return Character.toLowerCase(simpleName.charAt(0)) + simpleName.substring(1);
     }
 
-    private Set<String> getBasePackages(AnnotationMetadata metadata, AnnotationAttributes attributes) {
+    private Set<String> getBasePackages(AnnotationMetadata metadata) {
         Set<String> basePackages = new HashSet<>();
+        AnnotationAttributes attributes = null;
 
-        String[] packages = attributes.getStringArray("basePackages");
-        basePackages.addAll(Arrays.asList(packages));
+        // Try getting attributes from @EnableFast
+        if (metadata.hasAnnotation("com.fast.cqrs.autoconfigure.EnableFast")) {
+            attributes = AnnotationAttributes.fromMap(
+                metadata.getAnnotationAttributes("com.fast.cqrs.autoconfigure.EnableFast")
+            );
+        } else if (metadata.hasAnnotation(EnableSqlRepositories.class.getName())) {
+            attributes = AnnotationAttributes.fromMap(
+                metadata.getAnnotationAttributes(EnableSqlRepositories.class.getName())
+            );
+        }
 
-        Class<?>[] basePackageClasses = attributes.getClassArray("basePackageClasses");
-        for (Class<?> clazz : basePackageClasses) {
-            basePackages.add(ClassUtils.getPackageName(clazz));
+        if (attributes != null) {
+            String[] packages = attributes.getStringArray("basePackages");
+            basePackages.addAll(Arrays.asList(packages));
+
+            if (attributes.containsKey("basePackageClasses")) {
+                Class<?>[] basePackageClasses = attributes.getClassArray("basePackageClasses");
+                for (Class<?> clazz : basePackageClasses) {
+                    basePackages.add(ClassUtils.getPackageName(clazz));
+                }
+            }
         }
 
         if (basePackages.isEmpty()) {
