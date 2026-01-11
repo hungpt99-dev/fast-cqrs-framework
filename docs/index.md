@@ -16,6 +16,7 @@ Welcome to the Fast Framework documentation.
 | Module | Documentation |
 |--------|---------------|
 | CQRS Controllers | [CQRS.md](CQRS.md) |
+| Security & Authorization | [SECURITY.md](SECURITY.md) |
 | SQL Repositories | [SQL.md](SQL.md) |
 | Modal/DTO Mapping | [MODAL.md](MODAL.md) |
 | Logging & Tracing | [LOGGING.md](LOGGING.md) |

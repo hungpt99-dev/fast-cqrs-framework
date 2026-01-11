@@ -2,6 +2,8 @@ package com.fast.cqrs.proxy;
 
 import com.fast.cqrs.context.HttpInvocationContext;
 import com.fast.cqrs.dispatcher.CqrsDispatcher;
+import com.fast.cqrs.security.SecurityInvocationInterceptor;
+import com.fast.cqrs.validation.ValidationInterceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +18,12 @@ import java.lang.reflect.Method;
  * <p>
  * Object methods ({@code toString}, {@code equals}, {@code hashCode})
  * are handled directly without dispatch.
+ * <p>
+ * Security annotations like {@code @PreAuthorize} are checked before dispatch
+ * when Spring Security is available on the classpath.
+ * <p>
+ * Validation annotations like {@code @Valid} are processed before dispatch
+ * when Bean Validation is available on the classpath.
  */
 public class ControllerInvocationHandler implements InvocationHandler {
 
@@ -45,7 +53,13 @@ public class ControllerInvocationHandler implements InvocationHandler {
         log.debug("Intercepted call to {}.{}", 
                   controllerInterface.getSimpleName(), method.getName());
 
-        // Create invocation context and dispatch
+        // 1. Check security annotations (e.g., @PreAuthorize)
+        SecurityInvocationInterceptor.checkSecurity(method);
+
+        // 2. Validate arguments (e.g., @Valid)
+        ValidationInterceptor.validate(method, args);
+
+        // 3. Create invocation context and dispatch
         HttpInvocationContext context = new HttpInvocationContext(method, args);
         return dispatcher.dispatch(context);
     }
