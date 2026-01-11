@@ -5,37 +5,19 @@ A full example showing all framework features working together.
 ## Entity
 
 ```java
-@Modal
+@Table("orders")
 public class Order {
-    @ModalField
+    @Id
     private String id;
 
-    @ModalField(name = "customer_id")
+    @Column("customer_id")
     private String customerId;
 
-    @ModalField
     private BigDecimal total;
-
-    @ModalField
     private String status;
 
-    @ModalField(format = "yyyy-MM-dd HH:mm:ss")
+    @Column("created_at")
     private LocalDateTime createdAt;
-
-    @ModalField
-    private List<OrderItem> items;
-}
-
-@Modal
-public class OrderItem {
-    @ModalField
-    private String productId;
-
-    @ModalField
-    private int quantity;
-
-    @ModalField
-    private BigDecimal price;
 }
 ```
 
@@ -47,13 +29,12 @@ public record OrderDto(
     String customerId,
     BigDecimal total,
     String status,
-    String createdAt,
-    List<OrderItemDto> items
+    String createdAt
 ) {}
 
 public record CreateOrderCmd(
-    String customerId,
-    List<OrderItemDto> items
+    @NotBlank String customerId,
+    @NotNull @Min(1) BigDecimal total
 ) {}
 
 public record GetOrderQuery(String id) {}
@@ -63,26 +44,17 @@ public record GetOrderQuery(String id) {}
 
 ```java
 @SqlRepository
-public interface OrderRepository {
+public interface OrderRepository extends FastRepository<Order, String> {
+    // CRUD methods work automatically!
+    // - findById(id)
+    // - findAll()
+    // - save(entity)
+    // - saveAll(entities)
+    // - deleteById(id)
 
-    @Select("""
-        SELECT id, customer_id, total, status, created_at
-        FROM orders WHERE id = :id
-    """)
-    OrderDto findById(@Param("id") String id);
-
+    // Custom queries:
     @Select("SELECT * FROM orders WHERE customer_id = :customerId")
-    List<OrderDto> findByCustomer(@Param("customerId") String customerId);
-
-    @Execute("""
-        INSERT INTO orders(id, customer_id, total, status, created_at)
-        VALUES (:id, :customerId, :total, :status, :createdAt)
-    """)
-    void insert(@Param("id") String id,
-                @Param("customerId") String customerId,
-                @Param("total") BigDecimal total,
-                @Param("status") String status,
-                @Param("createdAt") LocalDateTime createdAt);
+    List<Order> findByCustomerId(@Param("customerId") String customerId);
 }
 ```
 
@@ -93,17 +65,17 @@ public interface OrderRepository {
 @RequestMapping("/api/orders")
 public interface OrderController {
 
+    @CacheableQuery(ttl = "5m")
+    @Metrics(name = "orders.get")
     @Query
-    @GetMapping("/{id}")
-    OrderDto getOrder(@PathVariable String id);
+    @PostMapping("/get")
+    OrderDto getOrder(@RequestBody GetOrderQuery query);
 
-    @Query
-    @GetMapping
-    List<OrderDto> getCustomerOrders(@RequestParam String customerId);
-
+    @RetryCommand(maxAttempts = 3)
+    @Metrics(name = "orders.create")
     @Command
     @PostMapping
-    void createOrder(@RequestBody CreateOrderCmd cmd);
+    void createOrder(@Valid @RequestBody CreateOrderCmd cmd);
 }
 ```
 
@@ -115,14 +87,11 @@ public class GetOrderHandler implements QueryHandler<GetOrderQuery, OrderDto> {
 
     private final OrderRepository repository;
 
-    public GetOrderHandler(OrderRepository repository) {
-        this.repository = repository;
-    }
-
-    @TraceLog(slowMs = 50)
     @Override
     public OrderDto handle(GetOrderQuery query) {
-        return repository.findById(query.id());
+        return repository.findById(query.id())
+            .map(this::toDto)
+            .orElse(null);
     }
 }
 
@@ -130,30 +99,32 @@ public class GetOrderHandler implements QueryHandler<GetOrderQuery, OrderDto> {
 public class CreateOrderHandler implements CommandHandler<CreateOrderCmd> {
 
     private final OrderRepository repository;
+    private final EventBus eventBus;
 
-    public CreateOrderHandler(OrderRepository repository) {
-        this.repository = repository;
-    }
-
-    @Loggable("Creating new order")
     @Override
     public void handle(CreateOrderCmd cmd) {
-        String orderId = UUID.randomUUID().toString();
-        BigDecimal total = calculateTotal(cmd.items());
+        Order order = new Order();
+        order.setId(UUID.randomUUID().toString());
+        order.setCustomerId(cmd.customerId());
+        order.setTotal(cmd.total());
+        order.setStatus("PENDING");
         
-        repository.insert(
-            orderId,
-            cmd.customerId(),
-            total,
-            "PENDING",
-            LocalDateTime.now()
-        );
+        repository.save(order);
+        eventBus.publish(new OrderCreatedEvent(order.getId()));
     }
+}
+```
 
-    private BigDecimal calculateTotal(List<OrderItemDto> items) {
-        return items.stream()
-            .map(i -> i.price().multiply(BigDecimal.valueOf(i.quantity())))
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
+## Event Handler
+
+```java
+@Component
+public class OrderCreatedHandler implements EventHandler<OrderCreatedEvent> {
+
+    @Override
+    public void handle(OrderCreatedEvent event) {
+        log.info("Order created: {}", event.getOrderId());
+        // Send notification, update analytics, etc.
     }
 }
 ```
@@ -177,11 +148,10 @@ public class OrderApplication {
 # Create order
 curl -X POST http://localhost:8080/api/orders \
   -H "Content-Type: application/json" \
-  -d '{"customerId": "C001", "items": [{"productId": "P001", "quantity": 2, "price": 29.99}]}'
+  -d '{"customerId": "C001", "total": 99.99}'
 
 # Get order
-curl http://localhost:8080/api/orders/ORD-001
-
-# Get customer orders
-curl http://localhost:8080/api/orders?customerId=C001
+curl -X POST http://localhost:8080/api/orders/get \
+  -H "Content-Type: application/json" \
+  -d '{"id": "ORD-001"}'
 ```
