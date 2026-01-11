@@ -1,4 +1,4 @@
-package com.fast.cqrs.event;
+package com.fast.cqrs.eventsourcing;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

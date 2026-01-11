@@ -1,5 +1,6 @@
-package com.fast.cqrs.event;
+package com.fast.cqrs.eventsourcing;
 
+import com.fast.cqrs.event.DomainEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;

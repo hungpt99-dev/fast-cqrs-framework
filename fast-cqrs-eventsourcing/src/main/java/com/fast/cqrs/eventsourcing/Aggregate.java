@@ -1,4 +1,6 @@
-package com.fast.cqrs.event;
+package com.fast.cqrs.eventsourcing;
+
+import com.fast.cqrs.event.DomainEvent;
 
 import java.util.ArrayList;
 import java.util.List;

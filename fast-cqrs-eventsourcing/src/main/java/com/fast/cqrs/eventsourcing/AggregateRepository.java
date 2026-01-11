@@ -1,5 +1,7 @@
-package com.fast.cqrs.event;
+package com.fast.cqrs.eventsourcing;
 
+import com.fast.cqrs.event.DomainEvent;
+import com.fast.cqrs.event.EventBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

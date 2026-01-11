@@ -21,6 +21,12 @@ dependencies {
     // Concurrent (Virtual Threads)
     api project(':fast-cqrs-concurrent')
     
+    // Event-Driven
+    api project(':fast-cqrs-event')
+    
+    // Event Sourcing
+    api project(':fast-cqrs-eventsourcing')
+    
     // Spring Boot Starter Web (common dependency)
     api 'org.springframework.boot:spring-boot-starter-web'
     
