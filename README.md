@@ -168,9 +168,9 @@ var result = retry(() -> unreliableApi.call(), 3);
 
 ## Requirements
 
-- Java 21+
-- Spring Boot 3.2+
-- Gradle 8.x
+- Java 25+
+- Spring Boot 4.0+
+- Gradle 9.x
 
 ---
 
