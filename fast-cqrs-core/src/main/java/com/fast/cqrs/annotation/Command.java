@@ -1,5 +1,7 @@
 package com.fast.cqrs.annotation;
 
+import com.fast.cqrs.handler.CommandHandler;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -9,17 +11,11 @@ import java.lang.annotation.Target;
 /**
  * Marks a controller method as a command operation (state-changing).
  * <p>
- * Command operations are dispatched through the {@link com.fast.cqrs.bus.CommandBus}
- * and are expected to modify system state. By CQRS convention, commands
- * typically do not return values (void methods).
+ * Command operations are dispatched through the {@link com.fast.cqrs.bus.CommandBus}.
  * <p>
- * This annotation is mandatory for all write operations in CQRS controllers.
- * Methods without either {@code @Query} or {@code @Command} will cause
- * a fail-fast error at runtime.
- * <p>
- * Example:
+ * Example with handler:
  * <pre>{@code
- * @Command
+ * @Command(handler = CreateOrderHandler.class)
  * @PostMapping
  * void createOrder(@RequestBody CreateOrderCmd cmd);
  * }</pre>
@@ -33,9 +29,22 @@ import java.lang.annotation.Target;
 public @interface Command {
 
     /**
-     * Optional description of the command operation.
-     *
-     * @return the description, if any
+     * Optional description.
      */
     String value() default "";
+
+    /**
+     * The handler class to route this command to.
+     */
+    Class<? extends CommandHandler<?>> handler() default DefaultHandler.class;
+
+    /**
+     * The command class to instantiate from method parameters.
+     */
+    Class<?> command() default Void.class;
+
+    /**
+     * Default placeholder handler.
+     */
+    interface DefaultHandler extends CommandHandler<Object> {}
 }
