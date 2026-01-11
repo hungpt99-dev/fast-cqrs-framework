@@ -5,20 +5,24 @@ import com.fast.cqrs.annotation.Query;
 import com.fast.cqrs.bus.CommandBus;
 import com.fast.cqrs.bus.QueryBus;
 import com.fast.cqrs.context.HttpInvocationContext;
+import com.fast.cqrs.handler.CommandHandler;
+import com.fast.cqrs.handler.QueryHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContext;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
 /**
  * Central CQRS dispatcher that routes requests to the appropriate bus.
  * <p>
- * This is the enforcement point for CQRS rules in the framework.
- * It inspects controller method annotations and routes to either
- * the {@link CommandBus} or {@link QueryBus}.
- * <p>
- * Methods must be annotated with either {@link Query} or {@link Command}.
- * Unannotated methods will cause a fail-fast error.
+ * Supports routing via:
+ * <ul>
+ *   <li>@Query/@Command with explicit handler class</li>
+ *   <li>@Query/@Command with query/command class</li>
+ *   <li>Auto-detection from method parameters</li>
+ * </ul>
  */
 public class CqrsDispatcher {
 
@@ -26,84 +30,133 @@ public class CqrsDispatcher {
 
     private final CommandBus commandBus;
     private final QueryBus queryBus;
+    private ApplicationContext applicationContext;
 
-    /**
-     * Creates a new CqrsDispatcher.
-     *
-     * @param commandBus the command bus for dispatching commands
-     * @param queryBus   the query bus for dispatching queries
-     */
     public CqrsDispatcher(CommandBus commandBus, QueryBus queryBus) {
         this.commandBus = commandBus;
         this.queryBus = queryBus;
     }
 
-    /**
-     * Dispatches an HTTP invocation to the appropriate bus.
-     *
-     * @param context the invocation context containing method and arguments
-     * @return the result of the operation (null for commands)
-     * @throws CqrsDispatchException if the method is not properly annotated
-     */
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
+    }
+
     public Object dispatch(HttpInvocationContext context) {
         Method method = context.method();
         
         boolean isQuery = method.isAnnotationPresent(Query.class);
         boolean isCommand = method.isAnnotationPresent(Command.class);
 
-        // Validate CQRS annotations
         if (!isQuery && !isCommand) {
             throw new CqrsDispatchException(
-                "Method '" + method.getName() + "' in " + method.getDeclaringClass().getSimpleName() +
-                " must be annotated with @Query or @Command"
+                "Method '" + method.getName() + "' must be annotated with @Query or @Command"
             );
         }
 
         if (isQuery && isCommand) {
             throw new CqrsDispatchException(
-                "Method '" + method.getName() + "' in " + method.getDeclaringClass().getSimpleName() +
-                " cannot be annotated with both @Query and @Command"
+                "Method '" + method.getName() + "' cannot have both @Query and @Command"
             );
         }
 
-        // Dispatch to appropriate bus
         if (isQuery) {
-            return dispatchQuery(context);
+            return dispatchQuery(context, method.getAnnotation(Query.class));
         } else {
-            return dispatchCommand(context);
+            return dispatchCommand(context, method.getAnnotation(Command.class));
         }
     }
 
-    private Object dispatchQuery(HttpInvocationContext context) {
+    @SuppressWarnings("unchecked")
+    private Object dispatchQuery(HttpInvocationContext context, Query annotation) {
+        // Option 1: Explicit handler class
+        if (annotation.handler() != Query.DefaultHandler.class) {
+            QueryHandler<Object, Object> handler = getHandler(annotation.handler());
+            Object query = buildQueryFromParams(annotation, context);
+            return handler.handle(query);
+        }
+
+        // Option 2: Explicit query class
+        if (annotation.query() != Void.class) {
+            Object query = buildObjectFromParams(annotation.query(), context.arguments());
+            return queryBus.dispatch(query);
+        }
+
+        // Option 3: Auto-detect from parameters
         Object query = extractPayload(context);
-        log.debug("Dispatching query from method: {}", context.method().getName());
-        
-        if (query == null) {
-            // For queries without a request body, create a simple query object
-            return queryBus.dispatch(new SimpleQuery(context.method(), context.arguments()));
+        if (query != null) {
+            return queryBus.dispatch(query);
         }
-        
-        return queryBus.dispatch(query);
+
+        // Option 4: Simple query
+        return queryBus.dispatch(new SimpleQuery(context.method(), context.arguments()));
     }
 
-    private Object dispatchCommand(HttpInvocationContext context) {
-        Object command = extractPayload(context);
-        log.debug("Dispatching command from method: {}", context.method().getName());
-        
-        if (command == null) {
-            // For commands without a request body, create a simple command object
-            commandBus.dispatch(new SimpleCommand(context.method(), context.arguments()));
-        } else {
+    @SuppressWarnings("unchecked")
+    private Object dispatchCommand(HttpInvocationContext context, Command annotation) {
+        // Option 1: Explicit handler class
+        if (annotation.handler() != Command.DefaultHandler.class) {
+            CommandHandler<Object> handler = getHandler(annotation.handler());
+            Object command = buildCommandFromParams(annotation, context);
+            handler.handle(command);
+            return null;
+        }
+
+        // Option 2: Explicit command class
+        if (annotation.command() != Void.class) {
+            Object command = buildObjectFromParams(annotation.command(), context.arguments());
             commandBus.dispatch(command);
+            return null;
         }
-        
-        return null; // Commands don't return values
+
+        // Option 3: Auto-detect from parameters
+        Object command = extractPayload(context);
+        if (command != null) {
+            commandBus.dispatch(command);
+        } else {
+            commandBus.dispatch(new SimpleCommand(context.method(), context.arguments()));
+        }
+        return null;
     }
 
-    /**
-     * Extracts the primary payload (command/query object) from the context.
-     * This looks for the first complex object argument (not primitive/String).
-     */
+    @SuppressWarnings("unchecked")
+    private <T> T getHandler(Class<?> handlerClass) {
+        if (applicationContext != null) {
+            return (T) applicationContext.getBean(handlerClass);
+        }
+        throw new CqrsDispatchException("ApplicationContext not available for handler lookup");
+    }
+
+    private Object buildQueryFromParams(Query annotation, HttpInvocationContext context) {
+        if (annotation.query() != Void.class) {
+            return buildObjectFromParams(annotation.query(), context.arguments());
+        }
+        // Create simple wrapper
+        return new SimpleQuery(context.method(), context.arguments());
+    }
+
+    private Object buildCommandFromParams(Command annotation, HttpInvocationContext context) {
+        if (annotation.command() != Void.class) {
+            return buildObjectFromParams(annotation.command(), context.arguments());
+        }
+        // Create simple wrapper
+        return new SimpleCommand(context.method(), context.arguments());
+    }
+
+    private Object buildObjectFromParams(Class<?> targetClass, Object[] args) {
+        try {
+            // Try constructor matching args
+            for (Constructor<?> ctor : targetClass.getConstructors()) {
+                if (ctor.getParameterCount() == args.length) {
+                    return ctor.newInstance(args);
+                }
+            }
+            // Try no-arg constructor
+            return targetClass.getDeclaredConstructor().newInstance();
+        } catch (Exception e) {
+            throw new CqrsDispatchException("Failed to create " + targetClass.getSimpleName(), e);
+        }
+    }
+
     private Object extractPayload(HttpInvocationContext context) {
         for (Object arg : context.arguments()) {
             if (arg != null && isPayloadType(arg.getClass())) {
@@ -120,13 +173,6 @@ public class CqrsDispatcher {
                !type.equals(Boolean.class);
     }
 
-    /**
-     * Simple query wrapper for methods without explicit query objects.
-     */
     public record SimpleQuery(Method method, Object[] arguments) {}
-
-    /**
-     * Simple command wrapper for methods without explicit command objects.
-     */
     public record SimpleCommand(Method method, Object[] arguments) {}
 }
