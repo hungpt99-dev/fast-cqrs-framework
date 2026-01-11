@@ -13,9 +13,9 @@ dependencies {
 ```
 
 ```java
+```java
 @SpringBootApplication
-@EnableCqrs(basePackages = "com.example.controller")
-@EnableSqlRepositories(basePackages = "com.example.repository")
+@EnableFast // Auto-configures everything based on conventions
 public class Application {
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);
@@ -35,6 +35,7 @@ public class Application {
 | `fast-cqrs-eventsourcing` | Full event sourcing support |
 | `fast-cqrs-concurrent` | Virtual Thread utilities |
 | `fast-cqrs-logging` | Automatic tracing and logging |
+| `fast-cqrs-dx` | CLI code generator and convention validation |
 | `fast-cqrs-util` | Common utilities |
 
 ---
@@ -46,9 +47,11 @@ public class Application {
 @RequestMapping("/api/orders")
 public interface OrderController {
 
+    // Handler is optional - framework auto-dispatches based on Query type
+    // Parameters are bound to GetOrderQuery automatically via @ModelAttribute
     @Query
     @GetMapping("/{id}")
-    Order getOrder(@PathVariable String id);
+    OrderDto getOrder(@PathVariable String id, @ModelAttribute GetOrderQuery query);
 
     @Command
     @PostMapping
@@ -162,6 +165,7 @@ var result = retry(() -> unreliableApi.call(), 3);
 | `fast-cqrs-sql` | SQL repositories |
 | `fast-cqrs-event` | Lightweight events only |
 | `fast-cqrs-eventsourcing` | Full event sourcing |
+| `fast-cqrs-dx` | Developer Experience (CLI, Conventions) |
 | `fast-cqrs-concurrent` | Virtual Thread utilities |
 
 ---

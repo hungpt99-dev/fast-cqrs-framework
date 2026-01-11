@@ -66,15 +66,15 @@ Generate components instantly:
 
 ```bash
 # Generate single component
-java -cp fast-cli.jar com.fast.cqrs.cli.FastCli generate controller Order
-java -cp fast-cli.jar com.fast.cqrs.cli.FastCli generate handler CreateOrder
-java -cp fast-cli.jar com.fast.cqrs.cli.FastCli generate entity Order
-java -cp fast-cli.jar com.fast.cqrs.cli.FastCli generate repository Order
-java -cp fast-cli.jar com.fast.cqrs.cli.FastCli generate event OrderCreated
-java -cp fast-cli.jar com.fast.cqrs.cli.FastCli generate aggregate Order
+java -cp fast-cli.jar com.fast.cqrs.dx.cli.FastCli generate controller Order
+java -cp fast-cli.jar com.fast.cqrs.dx.cli.FastCli generate handler CreateOrder
+java -cp fast-cli.jar com.fast.cqrs.dx.cli.FastCli generate entity Order
+java -cp fast-cli.jar com.fast.cqrs.dx.cli.FastCli generate repository Order
+java -cp fast-cli.jar com.fast.cqrs.dx.cli.FastCli generate event OrderCreated
+java -cp fast-cli.jar com.fast.cqrs.dx.cli.FastCli generate aggregate Order
 
 # Generate ALL components for a domain
-java -cp fast-cli.jar com.fast.cqrs.cli.FastCli generate all Product
+java -cp fast-cli.jar com.fast.cqrs.dx.cli.FastCli generate all Product
 ```
 
 ---

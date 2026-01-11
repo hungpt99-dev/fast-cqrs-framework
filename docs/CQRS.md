@@ -42,6 +42,7 @@ This separation makes code easier to test, optimize, and reason about.
 
 ```
 @Query → QueryBus → QueryHandler → returns data
+@Query (implicit) → QueryBus → (Auto-detected Handler) → returns data
 @Command → CommandBus → CommandHandler → modifies state
 ```
 
@@ -58,7 +59,23 @@ This separation makes code easier to test, optimize, and reason about.
 **Consider alternatives for:**
 - Simple CRUD operations
 - Rapid prototypes
+- Rapid prototypes
 - One-off scripts
+
+### Implicit Query Handling
+
+The framework supports **Implicit Query Dispatching**:
+1. Omit the `handler` in `@Query`.
+2. Use `@ModelAttribute` to bind request parameters to a Query Record.
+3. The framework automatically dispatches that Query object to the `QueryBus`.
+
+Example:
+```java
+@Query
+@GetMapping("/{id}")
+// Framework finds GetOrderQuery, binds params, and dispatches it
+OrderDto getOrder(@PathVariable String id, @ModelAttribute GetOrderQuery query);
+```
 
 ---
 
@@ -71,9 +88,11 @@ This separation makes code easier to test, optimize, and reason about.
 @RequestMapping("/api/users")
 public interface UserController {
 
+    // Implicit Query Dispatching
+    // No explicit handler needed - framework detects GetUserQuery
     @Query
     @GetMapping("/{id}")
-    UserDto getUser(@PathVariable String id);
+    UserDto getUser(@PathVariable String id, @ModelAttribute GetUserQuery query);
 
     @Command
     @PostMapping
