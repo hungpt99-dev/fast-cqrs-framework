@@ -1,6 +1,7 @@
 package com.example.order.handler;
 
 import com.example.order.dto.CreateOrderCmd;
+import com.example.order.entity.Order;
 import com.example.order.event.OrderCreatedEvent;
 import com.example.order.repository.OrderRepository;
 import com.fast.cqrs.event.EventBus;
@@ -16,10 +17,6 @@ import static com.fast.cqrs.concurrent.VirtualThread.*;
 
 /**
  * Handler for CreateOrderCmd.
- * 
- * Demonstrates:
- * - EventBus publishing
- * - VirtualThread parallel execution
  */
 @Component
 public class CreateOrderHandler implements CommandHandler<CreateOrderCmd> {
@@ -37,21 +34,16 @@ public class CreateOrderHandler implements CommandHandler<CreateOrderCmd> {
     public void handle(CreateOrderCmd cmd) {
         String orderId = IdGenerator.prefixedId("ORD");
         
-        // Insert order
-        orderRepository.insert(
-            orderId,
-            cmd.customerId(),
-            cmd.total(),
-            "PENDING",
-            LocalDateTime.now()
-        );
+        Order order = new Order();
+        order.setId(orderId);
+        order.setCustomerId(cmd.customerId());
+        order.setTotal(cmd.total());
+        order.setStatus("PENDING");
+        order.setCreatedAt(LocalDateTime.now().toString());
         
-        // Publish event (async, non-blocking)
+        orderRepository.save(order);
+        
+        // Publish event
         eventBus.publish(new OrderCreatedEvent(orderId, cmd.customerId(), cmd.total()));
-        
-        // Example: VirtualThread parallel execution
-        execute(() -> {
-            // Background task: notify external systems
-        });
     }
 }

@@ -2,6 +2,7 @@ package com.example.order.handler;
 
 import com.example.order.dto.GetOrdersByCustomerQuery;
 import com.example.order.dto.OrderDto;
+import com.example.order.entity.Order;
 import com.example.order.repository.OrderRepository;
 import com.fast.cqrs.handler.QueryHandler;
 import com.fast.cqrs.logging.annotation.TraceLog;
@@ -25,6 +26,7 @@ public class GetOrdersByCustomerHandler implements QueryHandler<GetOrdersByCusto
     @TraceLog(slowMs = 200)
     @Override
     public List<OrderDto> handle(GetOrdersByCustomerQuery query) {
-        return orderRepository.findByCustomer(query.customerId());
+        List<Order> orders = orderRepository.findByCustomerId(query.customerId());
+        return orders.stream().map(OrderDto::fromEntity).toList();
     }
 }

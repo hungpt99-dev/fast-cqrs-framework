@@ -2,6 +2,7 @@ package com.example.order.handler;
 
 import com.example.order.dto.GetOrderQuery;
 import com.example.order.dto.OrderDto;
+import com.example.order.entity.Order;
 import com.example.order.repository.OrderRepository;
 import com.fast.cqrs.handler.QueryHandler;
 import com.fast.cqrs.logging.annotation.TraceLog;
@@ -23,6 +24,7 @@ public class GetOrderHandler implements QueryHandler<GetOrderQuery, OrderDto> {
     @TraceLog(slowMs = 100)
     @Override
     public OrderDto handle(GetOrderQuery query) {
-        return orderRepository.findById(query.id());
+        Order order = orderRepository.findById(query.id()).orElse(null);
+        return order != null ? OrderDto.fromEntity(order) : null;
     }
 }
