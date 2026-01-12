@@ -1,6 +1,6 @@
 package com.fast.cqrs.autoconfigure;
 
-import com.fast.cqrs.annotation.HttpController;
+import com.fast.cqrs.cqrs.annotation.HttpController;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

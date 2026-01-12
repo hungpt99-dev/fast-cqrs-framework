@@ -1,6 +1,6 @@
 package com.fast.cqrs.logging.audit;
 
-import com.fast.cqrs.bus.CommandBus;
+import com.fast.cqrs.cqrs.CommandBus;
 import com.fast.cqrs.logging.context.TraceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

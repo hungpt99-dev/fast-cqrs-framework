@@ -1,13 +1,13 @@
 package com.fast.cqrs.autoconfigure;
 
-import com.fast.cqrs.bus.CommandBus;
-import com.fast.cqrs.bus.DefaultCommandBus;
-import com.fast.cqrs.bus.DefaultQueryBus;
-import com.fast.cqrs.bus.QueryBus;
-import com.fast.cqrs.dispatcher.CqrsDispatcher;
-import com.fast.cqrs.handler.CommandHandler;
-import com.fast.cqrs.handler.QueryHandler;
-import com.fast.cqrs.proxy.ControllerProxyFactory;
+import com.fast.cqrs.cqrs.CommandBus;
+import com.fast.cqrs.cqrs.DefaultCommandBus;
+import com.fast.cqrs.cqrs.DefaultQueryBus;
+import com.fast.cqrs.cqrs.QueryBus;
+import com.fast.cqrs.cqrs.CqrsDispatcher;
+import com.fast.cqrs.cqrs.CommandHandler;
+import com.fast.cqrs.cqrs.QueryHandler;
+import com.fast.cqrs.web.ControllerProxyFactory;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;

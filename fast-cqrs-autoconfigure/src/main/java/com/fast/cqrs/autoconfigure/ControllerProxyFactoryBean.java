@@ -1,6 +1,6 @@
 package com.fast.cqrs.autoconfigure;
 
-import com.fast.cqrs.proxy.ControllerProxyFactory;
+import com.fast.cqrs.web.ControllerProxyFactory;
 
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;

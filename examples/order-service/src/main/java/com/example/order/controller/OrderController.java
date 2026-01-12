@@ -4,12 +4,12 @@ import com.example.order.dto.CreateOrderCmd;
 import com.example.order.dto.GetOrderQuery;
 import com.example.order.dto.GetOrdersByCustomerQuery;
 import com.example.order.dto.OrderDto;
-import com.fast.cqrs.annotation.CacheableQuery;
-import com.fast.cqrs.annotation.Command;
-import com.fast.cqrs.annotation.HttpController;
-import com.fast.cqrs.annotation.Metrics;
-import com.fast.cqrs.annotation.Query;
-import com.fast.cqrs.annotation.RetryCommand;
+import com.fast.cqrs.cqrs.annotation.CacheableQuery;
+import com.fast.cqrs.cqrs.annotation.Command;
+import com.fast.cqrs.cqrs.annotation.HttpController;
+import com.fast.cqrs.cqrs.annotation.Metrics;
+import com.fast.cqrs.cqrs.annotation.Query;
+import com.fast.cqrs.cqrs.annotation.RetryCommand;
 
 import org.springframework.web.bind.annotation.*;
 

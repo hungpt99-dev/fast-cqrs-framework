@@ -169,9 +169,9 @@ class FeatureGenerator {
         String content = """
                 package %s.api;
 
-                import com.fast.cqrs.annotation.HttpController;
-                import com.fast.cqrs.annotation.Query;
-                import com.fast.cqrs.annotation.Command;
+                import com.fast.cqrs.cqrs.annotation.HttpController;
+                import com.fast.cqrs.cqrs.annotation.Query;
+                import com.fast.cqrs.cqrs.annotation.Command;
                 import org.springframework.web.bind.annotation.*;
 
                 import java.util.List;
@@ -238,7 +238,7 @@ class FeatureGenerator {
                 package %s.application;
 
                 import %s.api.%sCmd;
-                import com.fast.cqrs.handler.CommandHandler;
+                import com.fast.cqrs.cqrs.CommandHandler;
                 import org.springframework.stereotype.Component;
 
                 /**
@@ -503,7 +503,7 @@ class FeatureGenerator {
                 import %s.api.%sQuery;
                 import %s.api.%sDto;
                 import %s.infrastructure.%sRepository;
-                import com.fast.cqrs.handler.QueryHandler;
+                import com.fast.cqrs.cqrs.QueryHandler;
                 import org.springframework.stereotype.Component;
 
                 /**
@@ -548,7 +548,7 @@ class FeatureGenerator {
                 import %s.api.%sQuery;
                 import %s.api.%sDto;
                 import %s.infrastructure.%sRepository;
-                import com.fast.cqrs.handler.QueryHandler;
+                import com.fast.cqrs.cqrs.QueryHandler;
                 import org.springframework.stereotype.Component;
 
                 import java.util.List;

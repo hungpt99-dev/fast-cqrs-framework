@@ -4,7 +4,7 @@ import com.example.order.dto.GetOrderQuery;
 import com.example.order.dto.OrderDto;
 import com.example.order.entity.Order;
 import com.example.order.repository.OrderRepository;
-import com.fast.cqrs.handler.QueryHandler;
+import com.fast.cqrs.cqrs.QueryHandler;
 import com.fast.cqrs.logging.annotation.TraceLog;
 
 import org.springframework.stereotype.Component;

@@ -5,7 +5,7 @@ import com.example.order.entity.Order;
 import com.example.order.event.OrderCreatedEvent;
 import com.example.order.repository.OrderRepository;
 import com.fast.cqrs.event.EventBus;
-import com.fast.cqrs.handler.CommandHandler;
+import com.fast.cqrs.cqrs.CommandHandler;
 import com.fast.cqrs.logging.annotation.Loggable;
 import com.fast.cqrs.util.IdGenerator;
 
