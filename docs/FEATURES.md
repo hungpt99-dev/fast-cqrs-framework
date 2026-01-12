@@ -98,33 +98,7 @@ void createOrder(@RequestBody CreateOrderCmd cmd);
 
 ---
 
-## Domain Events
 
-```java
-// Define event
-public class OrderCreatedEvent extends DomainEvent {
-    private final String orderId;
-    public OrderCreatedEvent(String orderId) {
-        this.orderId = orderId;
-    }
-}
-
-// Publish event
-@PublishEvent(OrderCreatedEvent.class)
-@Command
-void createOrder(@RequestBody CreateOrderCmd cmd);
-
-// Handle event
-@Component
-public class OrderCreatedHandler implements EventHandler<OrderCreatedEvent> {
-    @Override
-    public void handle(OrderCreatedEvent event) {
-        // Send notification, update read model, etc.
-    }
-}
-```
-
----
 
 ## Interceptors
 

@@ -6,18 +6,14 @@ A full example showing all framework features working together.
 
 ```
 order-service/
-├── aggregate/
-│   └── OrderAggregate.java      # Event-sourced aggregate
+
 ├── controller/
 │   └── OrderController.java     # CQRS controller
 ├── dto/
 │   ├── CreateOrderCmd.java      # Command
 │   ├── GetOrderQuery.java       # Query
 │   └── OrderDto.java            # Entity with @Table
-├── event/
-│   ├── OrderCreatedEvent.java   # Domain event
-│   ├── OrderCreatedHandler.java # Event handler
-│   └── OrderShippedEvent.java   # Domain event
+
 ├── handler/
 │   ├── CreateOrderHandler.java  # Command handler
 │   └── GetOrderHandler.java     # Query handler
@@ -77,36 +73,7 @@ public interface OrderController {
 }
 ```
 
-## Event-Sourced Aggregate
 
-```java
-@EventSourced
-public class OrderAggregate extends Aggregate {
-    private String status;
-
-    public void create(String customerId, BigDecimal total) {
-        apply(new OrderCreatedEvent(getId(), customerId, total));
-    }
-
-    @ApplyEvent
-    private void on(OrderCreatedEvent event) {
-        this.status = "CREATED";
-    }
-}
-```
-
-## Event Handler
-
-```java
-@Component
-public class OrderCreatedHandler implements DomainEventHandler<OrderCreatedEvent> {
-    @Override
-    public void handle(OrderCreatedEvent event) {
-        log.info("Order created: {}", event.getAggregateId());
-        // Send email, update analytics, etc.
-    }
-}
-```
 
 ## Configuration
 
@@ -115,15 +82,7 @@ public class OrderCreatedHandler implements DomainEventHandler<OrderCreatedEvent
 @EnableFast
 public class OrderApplication {
     
-    @Bean
-    public EventStore eventStore() {
-        return new InMemoryEventStore();
-    }
-    
-    @Bean
-    public EventBus eventBus() {
-        return new AsyncEventBus();
-    }
+
 
     public static void main(String[] args) {
         SpringApplication.run(OrderApplication.class, args);
@@ -142,5 +101,4 @@ public class OrderApplication {
 | Retry | `@RetryCommand` |
 | Metrics | `@Metrics` |
 | Validation | `@Valid` |
-| Event Sourcing | `Aggregate`, `@ApplyEvent` |
-| Event Bus | `EventBus`, `DomainEventHandler` |
+

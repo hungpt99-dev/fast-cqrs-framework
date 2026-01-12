@@ -2,9 +2,7 @@ package com.example.order.handler;
 
 import com.example.order.dto.CreateOrderCmd;
 import com.example.order.entity.Order;
-import com.example.order.event.OrderCreatedEvent;
-import com.example.order.repository.OrderRepository;
-import com.fast.cqrs.event.EventBus;
+
 import com.fast.cqrs.cqrs.CommandHandler;
 import com.fast.cqrs.logging.annotation.Loggable;
 import com.fast.cqrs.util.IdGenerator;
@@ -20,11 +18,9 @@ import java.time.LocalDateTime;
 public class CreateOrderHandler implements CommandHandler<CreateOrderCmd> {
 
     private final OrderRepository orderRepository;
-    private final EventBus eventBus;
 
-    public CreateOrderHandler(OrderRepository orderRepository, EventBus eventBus) {
+    public CreateOrderHandler(OrderRepository orderRepository) {
         this.orderRepository = orderRepository;
-        this.eventBus = eventBus;
     }
 
     @Loggable("Creating new order")
@@ -41,7 +37,5 @@ public class CreateOrderHandler implements CommandHandler<CreateOrderCmd> {
 
         orderRepository.save(order);
 
-        // Publish event
-        eventBus.publish(new OrderCreatedEvent(orderId, cmd.customerId(), cmd.total()));
     }
 }

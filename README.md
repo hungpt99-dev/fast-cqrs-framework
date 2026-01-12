@@ -72,7 +72,6 @@ The framework focuses on **CQRS-first design**, enforcing a clear separation bet
 
 ### What the Framework Does NOT Do
 * No ORM state magic
-* No event sourcing (unless explicitly added via `fast-cqrs-eventsourcing`)
 * No hidden async behavior
 * No automatic retries without visibility
 
@@ -133,42 +132,9 @@ public interface OrderRepository extends FastRepository<Order, String> {
 }
 ```
 
-### Event System
 
-```java
-// Publish events
-@Autowired EventBus eventBus;
-eventBus.publish(new OrderCreatedEvent(orderId));
 
-// Handle events
-@Component
-public class OrderCreatedHandler implements DomainEventHandler<OrderCreatedEvent> {
-    @Override
-    public void handle(OrderCreatedEvent event) {
-        // Send notification, update read model
-    }
-}
-```
 
-### Event Sourcing (Optional)
-
-Enable `fast-cqrs-eventsourcing` to use this feature.
-
-```java
-@EventSourced
-public class OrderAggregate extends Aggregate {
-    private String status;
-
-    public void create(String customerId) {
-        apply(new OrderCreatedEvent(getId(), customerId));
-    }
-
-    @ApplyEvent
-    private void on(OrderCreatedEvent event) {
-        this.status = "CREATED";
-    }
-}
-```
 
 ### Concurrency Utilities
 
@@ -191,7 +157,7 @@ User user = Tasks.supply("load-user", () -> userService.load(id))
 | Module | Purpose |
 |--------|---------|
 | `fast-cqrs-starter` | All-in-one dependency (Recommended) |
-| `fast-cqrs-core` | Core CQRS patterns, buses, and dispatcher |
+| `fast-cqrs-core` | Core CQRS patterns (Command/Query buses) |
 | `fast-cqrs-sql` | explicit SQL repositories |
 | `fast-cqrs-dx` | Developer Experience (CLI, convention enforcement) |
 | `fast-cqrs-logging` | Observability (Logging, tracing) |
@@ -212,7 +178,6 @@ User user = Tasks.supply("load-user", () -> userService.load(id))
 - [CQRS.md](docs/CQRS.md) - Controllers and handlers
 - [SQL.md](docs/SQL.md) - SQL repositories
 - [REPOSITORY.md](docs/REPOSITORY.md) - FastRepository
-- [EVENTS.md](docs/EVENTS.md) - Event sourcing
 - [EXAMPLE.md](docs/EXAMPLE.md) - Complete example
 
 ---

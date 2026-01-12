@@ -37,10 +37,7 @@ src/main/java/com/example/order/
 ├── dto/
 │   ├── CreateOrderCmd.java     # *Cmd suffix
 │   └── GetOrderQuery.java      # *Query suffix
-├── event/
-│   └── OrderCreatedEvent.java  # *Event suffix
-└── aggregate/
-    └── OrderAggregate.java     # *Aggregate suffix
+
 ```
 
 ---
@@ -55,8 +52,7 @@ src/main/java/com/example/order/
 | Entity | `*.entity` | - | `Order` |
 | Command | `*.dto` | `Cmd` | `CreateOrderCmd` |
 | Query | `*.dto` | `Query` | `GetOrderQuery` |
-| Event | `*.event` | `Event` | `OrderCreatedEvent` |
-| Aggregate | `*.aggregate` | `Aggregate` | `OrderAggregate` |
+
 
 ---
 
@@ -70,8 +66,7 @@ java -cp fast-cli.jar com.fast.cqrs.dx.cli.FastCli generate controller Order
 java -cp fast-cli.jar com.fast.cqrs.dx.cli.FastCli generate handler CreateOrder
 java -cp fast-cli.jar com.fast.cqrs.dx.cli.FastCli generate entity Order
 java -cp fast-cli.jar com.fast.cqrs.dx.cli.FastCli generate repository Order
-java -cp fast-cli.jar com.fast.cqrs.dx.cli.FastCli generate event OrderCreated
-java -cp fast-cli.jar com.fast.cqrs.dx.cli.FastCli generate aggregate Order
+
 
 # Generate ALL components for a domain
 java -cp fast-cli.jar com.fast.cqrs.dx.cli.FastCli generate all Product

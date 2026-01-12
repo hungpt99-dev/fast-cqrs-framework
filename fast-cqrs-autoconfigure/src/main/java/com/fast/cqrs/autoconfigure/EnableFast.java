@@ -14,41 +14,44 @@ import java.lang.annotation.Target;
  * Zero configuration - everything is convention-based.
  * <p>
  * Example:
- * <pre>{@code
- * @SpringBootApplication
- * @EnableFast
- * public class Application {
- *     public static void main(String[] args) {
- *         SpringApplication.run(Application.class, args);
+ * 
+ * <pre>
+ * {
+ *     &#64;code
+ *     &#64;SpringBootApplication
+ *     @EnableFast
+ *     public class Application {
+ *         public static void main(String[] args) {
+ *             SpringApplication.run(Application.class, args);
+ *         }
  *     }
  * }
- * }</pre>
+ * </pre>
  * 
  * <h2>Conventions</h2>
  * <ul>
- *   <li>Controllers: {@code *.controller} package, suffix {@code Controller}</li>
- *   <li>Handlers: {@code *.handler} package, suffix {@code Handler}</li>
- *   <li>Repositories: {@code *.repository} package, suffix {@code Repository}</li>
- *   <li>Entities: {@code *.entity} package</li>
- *   <li>Events: {@code *.event} package, suffix {@code Event}</li>
- *   <li>Aggregates: {@code *.aggregate} package, suffix {@code Aggregate}</li>
+ * <li>Controllers: {@code *.controller} package, suffix {@code Controller}</li>
+ * <li>Handlers: {@code *.handler} package, suffix {@code Handler}</li>
+ * <li>Repositories: {@code *.repository} package, suffix
+ * {@code Repository}</li>
+ * <li>Entities: {@code *.entity} package</li>
  * </ul>
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Import({
-    FastAutoConfiguration.class,
-    CqrsRegistrarConfiguration.class,
-    HttpControllerRegistrar.class,
-    SqlRepositoryImportRegistrar.class
+        FastAutoConfiguration.class,
+        CqrsRegistrarConfiguration.class,
+        HttpControllerRegistrar.class,
+        SqlRepositoryImportRegistrar.class
 })
 public @interface EnableFast {
-    
+
     /**
      * Base packages to scan. Defaults to the package of the annotated class.
      */
     String[] basePackages() default {};
-    
+
     /**
      * Enable strict naming convention enforcement.
      */

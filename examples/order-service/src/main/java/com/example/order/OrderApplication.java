@@ -2,10 +2,6 @@ package com.example.order;
 
 import com.fast.cqrs.autoconfigure.EnableFast;
 
-import com.fast.cqrs.event.AsyncEventBus;
-import com.fast.cqrs.event.EventBus;
-import com.fast.cqrs.eventsourcing.EventStore;
-import com.fast.cqrs.eventsourcing.InMemoryEventStore;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -23,13 +19,4 @@ public class OrderApplication {
         SpringApplication.run(OrderApplication.class, args);
     }
 
-    @Bean
-    public EventBus eventBus() {
-        return new AsyncEventBus();
-    }
-
-    @Bean
-    public EventStore eventStore() {
-        return new InMemoryEventStore();
-    }
 }

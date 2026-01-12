@@ -56,7 +56,7 @@ public class FastCli implements Callable<Integer> {
 @Command(name = "generate", aliases = { "g" }, description = "Generate framework components (feature-based structure)")
 class GenerateCommand implements Callable<Integer> {
 
-    @Parameters(index = "0", description = "Component type: controller, handler, entity, repository, event, aggregate, dto, all")
+    @Parameters(index = "0", description = "Component type: controller, handler, entity, repository, dto, all")
     private String type;
 
     @Parameters(index = "1", description = "Feature/Component name (e.g., Order, CreateOrder)")
@@ -86,14 +86,13 @@ class GenerateCommand implements Callable<Integer> {
                 case "handler" -> generator.generateHandler(name);
                 case "entity" -> generator.generateEntity(name);
                 case "repository" -> generator.generateRepository(name);
-                case "event" -> generator.generateEvent(name);
-                case "aggregate" -> generator.generateAggregate(name);
+
                 case "dto" -> generator.generateDto(name);
                 case "all" -> generator.generateAll(name);
                 default -> {
                     System.err.println("Unknown type: " + type);
                     System.err.println(
-                            "Valid types: controller, handler, entity, repository, event, aggregate, dto, all");
+                            "Valid types: controller, handler, entity, repository, dto, all");
                     return 1;
                 }
             }
@@ -112,7 +111,7 @@ class GenerateCommand implements Callable<Integer> {
         String baseName = name;
 
         // Remove common suffixes
-        String[] suffixes = { "Controller", "Handler", "Repository", "Event", "Aggregate", "Cmd", "Query", "Dto" };
+        String[] suffixes = { "Controller", "Handler", "Repository", "Cmd", "Query", "Dto" };
         for (String suffix : suffixes) {
             if (baseName.endsWith(suffix)) {
                 baseName = baseName.substring(0, baseName.length() - suffix.length());
@@ -141,7 +140,7 @@ class GenerateCommand implements Callable<Integer> {
  * <pre>
  * {basePackage}.{feature}/
  * ├── api/           # Controllers, DTOs (Cmd, Query, Response)
- * ├── domain/        # Entities, Aggregates, Events, Value Objects
+ * ├── domain/        # Entities, Value Objects
  * ├── application/   # Handlers (Command/Query handlers)
  * └── infrastructure/ # Repositories, External integrations
  * </pre>
@@ -345,91 +344,6 @@ class FeatureGenerator {
         writeFile("infrastructure", className, content);
     }
 
-    void generateEvent(String name) throws IOException {
-        String className = ensureSuffix(name, "Event");
-
-        String content = """
-                package %s.domain;
-
-                import com.fast.cqrs.event.DomainEvent;
-
-                /**
-                 * Domain event: %s.
-                 */
-                public class %s extends DomainEvent {
-
-                    private final String entityId;
-
-                    public %s(String aggregateId, String entityId) {
-                        super(aggregateId);
-                        this.entityId = entityId;
-                    }
-
-                    public String getEntityId() {
-                        return entityId;
-                    }
-                }
-                """.formatted(featurePackage(), className, className, className);
-
-        writeFile("domain", className, content);
-    }
-
-    void generateAggregate(String name) throws IOException {
-        String className = ensureSuffix(name, "Aggregate");
-        String entityName = removeSuffix(name, "Aggregate");
-
-        String content = """
-                package %s.domain;
-
-                import com.fast.cqrs.eventsourcing.Aggregate;
-                import com.fast.cqrs.eventsourcing.ApplyEvent;
-                import com.fast.cqrs.eventsourcing.EventSourced;
-
-                /**
-                 * %s aggregate root.
-                 */
-                @EventSourced
-                public class %s extends Aggregate {
-
-                    private String status;
-
-                    public %s() {
-                        super();
-                    }
-
-                    public %s(String id) {
-                        super(id);
-                        this.status = "CREATED";
-                    }
-
-                    // Commands
-                    public void create() {
-                        apply(new %sCreatedEvent(getId(), getId()));
-                    }
-
-                    // Event handlers
-                    @ApplyEvent
-                    public void on(%sCreatedEvent event) {
-                        this.status = "CREATED";
-                    }
-
-                    // Getters
-                    public String getStatus() {
-                        return status;
-                    }
-                }
-                """.formatted(
-                featurePackage(),
-                entityName,
-                className,
-                className,
-                className,
-                entityName,
-                entityName);
-
-        writeFile("domain", className, content);
-    }
-
     void generateDto(String name) throws IOException {
         String baseName = name;
 
@@ -605,8 +519,6 @@ class FeatureGenerator {
 
         // Domain layer
         generateEntity(entityName);
-        generateAggregate(entityName);
-        generateEvent(entityName + "Created");
 
         // API layer - DTOs
         generateDto("Create" + entityName);
@@ -638,7 +550,7 @@ class FeatureGenerator {
         System.out.println("Structure:");
         System.out.println("  " + featurePackage() + "/");
         System.out.println("  ├── api/           # Controllers, DTOs, Queries");
-        System.out.println("  ├── domain/        # Entities, Aggregates, Events");
+        System.out.println("  ├── domain/        # Entities");
         System.out.println("  ├── application/   # Command & Query Handlers");
         System.out.println("  └── infrastructure/ # Repositories");
     }
