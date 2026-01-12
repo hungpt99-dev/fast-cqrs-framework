@@ -1,6 +1,80 @@
 # Fast CQRS Framework
 
-A lightweight internal framework for CQRS, SQL repositories, event sourcing, and virtual threads in Java microservices.
+This internal framework is built on top of **Spring Boot** with the goal of **standardizing code quality across teams with different experience levels**, while keeping the system **explicit, predictable, and easy to maintain**.
+
+The framework focuses on **CQRS-first design**, enforcing a clear separation between **read** and **write** logic, and intentionally **avoids ORM “magic” behaviors** that often hide performance costs and introduce subtle bugs.
+
+## Core Goals
+
+1. **Ensure consistent code quality**
+   * Enforce conventions and structure regardless of developer seniority
+   * Reduce architectural drift across teams and services
+   * Make code review simpler and more objective
+
+2. **Avoid hidden ORM behavior**
+   * No implicit lazy loading
+   * No accidental N+1 queries
+   * Explicit queries, explicit transactions, explicit mapping
+   * Database access should be easy to reason about and easy to profile
+
+3. **Reduce boilerplate without losing clarity**
+   * Remove repetitive glue code (handlers, controllers, mappers)
+   * Keep business logic explicit and visible
+   * Generated code is readable and modifiable
+
+4. **Make common cases easy, uncommon cases possible**
+   * 80% of use cases require minimal configuration
+   * Advanced scenarios remain fully customizable
+   * No “framework lock-in” for edge cases
+
+5. **Lower the learning curve**
+   * Clear mental model: *Command → Handler → State change* / *Query → Handler → Read model*
+   * Minimal annotations
+   * Predictable execution flow
+
+---
+
+## Design Principles
+
+### 1. CQRS by Default
+* Commands and Queries are **first-class citizens**
+* No mixed read/write handlers
+* Read models are optimized for queries, not reused domain entities
+
+### 2. Explicit Over Implicit
+* No magic entity state tracking
+* No automatic cascading writes
+* No hidden database calls
+* What you see in code is what actually happens at runtime
+
+### 3. Convention Over Configuration
+* Strong package and naming conventions
+* Automatic wiring based on intent, not reflection tricks
+* Convention violations fail fast at startup
+
+### 4. Framework as Guardrail, Not Abstraction
+* The framework **guides** developers instead of hiding complexity
+* You can always drop down to plain Spring / JDBC when needed
+* No custom DSL that replaces Java or Spring idioms
+
+---
+
+## Capabilities
+
+### What the Framework Handles for You
+* Command / Query routing and handler discovery
+* Transaction boundary enforcement
+* Consistent exception handling
+* Logging, tracing, and metrics hooks
+* Mapping between persistence models and DTOs
+* Boilerplate controller generation
+* Compile-time or startup-time convention checks
+
+### What the Framework Does NOT Do
+* No ORM state magic
+* No event sourcing (unless explicitly added via `fast-cqrs-eventsourcing`)
+* No hidden async behavior
+* No automatic retries without visibility
 
 ---
 
@@ -13,7 +87,6 @@ dependencies {
 ```
 
 ```java
-```java
 @SpringBootApplication
 @EnableFast // Auto-configures everything based on conventions
 public class Application {
@@ -25,20 +98,9 @@ public class Application {
 
 ---
 
-## Features
+## Technical Guide
 
-| Module | Description |
-|--------|-------------|
-| `fast-cqrs-core` | CQRS annotations, buses, handlers, events, event sourcing |
-| `fast-cqrs-sql` | SQL repositories with `FastRepository` |
-| `fast-cqrs-concurrent` | Virtual Thread utilities |
-| `fast-cqrs-logging` | Automatic tracing and logging |
-| `fast-cqrs-dx` | CLI code generator and convention validation |
-| `fast-cqrs-util` | Common utilities |
-
----
-
-## CQRS Controllers
+### CQRS Controllers
 
 ```java
 @HttpController
@@ -57,9 +119,9 @@ public interface OrderController {
 }
 ```
 
----
+### SQL Repositories
 
-## SQL Repositories
+The framework uses a direct-to-SQL approach to avoid ORM complexity.
 
 ```java
 @SqlRepository
@@ -71,21 +133,7 @@ public interface OrderRepository extends FastRepository<Order, String> {
 }
 ```
 
-**Entity:**
-```java
-@Table("orders")
-public class Order {
-    @Id
-    private String id;
-    
-    @Column("customer_id")
-    private String customerId;
-}
-```
-
----
-
-## Event-Driven
+### Event System
 
 ```java
 // Publish events
@@ -102,9 +150,9 @@ public class OrderCreatedHandler implements DomainEventHandler<OrderCreatedEvent
 }
 ```
 
----
+### Event Sourcing (Optional)
 
-## Event Sourcing
+Enable `fast-cqrs-eventsourcing` to use this feature.
 
 ```java
 @EventSourced
@@ -122,19 +170,7 @@ public class OrderAggregate extends Aggregate {
 }
 ```
 
-**Repository:**
-```java
-AggregateRepository<OrderAggregate> repo = new AggregateRepository<>(
-    eventStore, eventBus, OrderAggregate.class);
-
-OrderAggregate order = repo.load(orderId);
-order.ship();
-repo.save(order);
-```
-
----
-
-## Concurrency
+### Concurrency Utilities
 
 ```java
 import com.fast.cqrs.concurrent.task.*;
@@ -146,26 +182,20 @@ User user = Tasks.supply("load-user", () -> userService.load(id))
     .retry(3)
     .fallback(() -> User.EMPTY)
     .execute();
-
-// Parallel execution
-FlowResult result = ParallelFlow.of()
-    .task("user", () -> loadUser())
-    .task("orders", () -> loadOrders())
-    .timeout(3, TimeUnit.SECONDS)
-    .execute();
 ```
 
 ---
 
-## Modules
+## Module Overview
 
-| Module | When to Use |
-|--------|-------------|
-| `fast-cqrs-starter` | All-in-one (recommended) |
-| `fast-cqrs-core` | CQRS, Events, Event Sourcing |
-| `fast-cqrs-sql` | SQL repositories |
-| `fast-cqrs-dx` | Developer Experience (CLI, Conventions) |
-| `fast-cqrs-concurrent` | Virtual Thread utilities |
+| Module | Purpose |
+|--------|---------|
+| `fast-cqrs-starter` | All-in-one dependency (Recommended) |
+| `fast-cqrs-core` | Core CQRS patterns, buses, and dispatcher |
+| `fast-cqrs-sql` | explicit SQL repositories |
+| `fast-cqrs-dx` | Developer Experience (CLI, convention enforcement) |
+| `fast-cqrs-logging` | Observability (Logging, tracing) |
+| `fast-cqrs-concurrent`| Virtual Thread structured concurrency |
 
 ---
 
@@ -177,7 +207,7 @@ FlowResult result = ParallelFlow.of()
 
 ---
 
-## Documentation
+## Documentation Links
 
 - [CQRS.md](docs/CQRS.md) - Controllers and handlers
 - [SQL.md](docs/SQL.md) - SQL repositories
