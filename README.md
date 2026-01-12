@@ -136,22 +136,25 @@ repo.save(order);
 
 ---
 
-## Virtual Threads
+## Concurrency
 
 ```java
-import static com.fast.cqrs.concurrent.VirtualThread.*;
+import com.fast.cqrs.concurrent.task.*;
+import com.fast.cqrs.concurrent.flow.*;
+
+// Task with timeout, retry, fallback
+User user = Tasks.supply("load-user", () -> userService.load(id))
+    .timeout(2, TimeUnit.SECONDS)
+    .retry(3)
+    .fallback(() -> User.EMPTY)
+    .execute();
 
 // Parallel execution
-var users = parallel(
-    () -> fetchUser(1),
-    () -> fetchUser(2)
-);
-
-// Timeout
-var data = timeout(() -> slowService.call(), 5, TimeUnit.SECONDS);
-
-// Retry
-var result = retry(() -> unreliableApi.call(), 3);
+FlowResult result = ParallelFlow.of()
+    .task("user", () -> loadUser())
+    .task("orders", () -> loadOrders())
+    .timeout(3, TimeUnit.SECONDS)
+    .execute();
 ```
 
 ---

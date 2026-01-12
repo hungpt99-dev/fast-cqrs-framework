@@ -1,6 +1,6 @@
-# Virtual Threads (Concurrent Module)
+# Concurrent Module
 
-Utilities for parallel execution using Java 21+ Virtual Threads.
+Unified concurrency framework for Java 21+ with Virtual Threads, parallel execution, and resilience patterns.
 
 ## Installation
 
@@ -8,85 +8,193 @@ Utilities for parallel execution using Java 21+ Virtual Threads.
 implementation 'com.fast:fast-cqrs-concurrent:1.0.0-SNAPSHOT'
 ```
 
-## Usage
+## Quick Start
 
 ```java
-import static com.fast.cqrs.concurrent.VirtualThread.*;
+import com.fast.cqrs.concurrent.task.*;
+import com.fast.cqrs.concurrent.flow.*;
 ```
 
-## Features
+---
 
-### Basic Operations
+## 1. Task API
+
+Unified async API with timeout, retry, and fallback:
 
 ```java
-// Run and get result
-var user = get(run(() -> userService.findById(id)));
-
-// Fire and forget
-execute(() -> notificationService.send(msg));
+User user = Tasks.supply("load-user", () -> userService.load(id))
+    .timeout(2, TimeUnit.SECONDS)
+    .retry(3)
+    .fallback(() -> User.EMPTY)
+    .trace()
+    .execute();
 ```
 
-### Parallel Execution
+### Execution Strategies
+
+| Strategy | Use Case |
+|----------|----------|
+| `VIRTUAL_THREAD` | I/O-bound (default) |
+| `FORK_JOIN` | CPU-bound |
+| `CALLER` | Synchronous |
+
+---
+
+## 2. Parallel Flow
+
+Fan-out/fan-in with declarative syntax:
 
 ```java
-// Run all in parallel
-var users = parallel(
-    () -> fetchUser(1),
-    () -> fetchUser(2),
-    () -> fetchUser(3)
-);
+FlowResult result = ParallelFlow.of()
+    .task("user", () -> loadUser())
+    .task("orders", () -> loadOrders())
+    .task("balance", () -> loadBalance())
+    .timeout(3, TimeUnit.SECONDS)
+    .failFast()
+    .execute();
 
-// Race - first to complete wins
-var result = race(
-    () -> fetchFromServer1(),
-    () -> fetchFromServer2()
-);
+User user = result.get("user");
+if (result.hasErrors()) {
+    result.errors().forEach((k, e) -> log.error("{} failed", k, e));
+}
 ```
 
-### Timeout
+---
+
+## 3. Task Graph (Dependencies)
+
+Execute tasks with dependencies:
 
 ```java
-// With timeout
-var data = timeout(() -> slowService.call(), 5, TimeUnit.SECONDS);
-
-// Shorthand (seconds)
-var data = timeout(() -> slowService.call(), 5);
+FlowResult result = TaskGraph.of()
+    .task("user", () -> loadUser())
+    .task("orders", () -> loadOrders())
+    .task("profile", g -> buildProfile(g.get("user"), g.get("orders")))
+        .dependsOn("user", "orders")
+    .execute();
 ```
 
-### Retry
+---
+
+## 4. Structured Concurrency
+
+Parent-child task ownership with auto-cancellation:
 
 ```java
-// Retry 3 times
-var result = retry(() -> unreliableApi.call(), 3);
-
-// With delay between retries
-var result = retry(() -> api.call(), 3, 500); // 500ms delay
+try (TaskScope scope = TaskScope.open("load-profile")) {
+    Future<User> user = scope.fork(() -> loadUser());
+    Future<List<Order>> orders = scope.fork(() -> loadOrders());
+    
+    scope.join();
+    return new Profile(user.get(), orders.get());
+}
 ```
 
-### Scheduling
+---
+
+## 5. Parallel Stream
+
+Bounded parallel collections:
 
 ```java
-// Execute after delay
-delay(1000, () -> log.info("After 1 second"));
-
-// Periodic execution
-interval(5000, () -> healthCheck());
-
-// Sleep
-sleep(100);
+List<Enriched> results = ParallelStream.from(users)
+    .parallel(10)
+    .map(this::enrich)
+    .timeoutPerItem(200, TimeUnit.MILLISECONDS)
+    .retryPerItem(2)
+    .skipOnError()
+    .collect();
 ```
+
+---
+
+## 6. Circuit Breaker
+
+Resilient execution:
+
+```java
+CircuitBreaker breaker = CircuitBreaker.of("payment")
+    .failureThreshold(5)
+    .resetTimeout(30)
+    .build();
+
+Result result = breaker.execute(() -> paymentService.call());
+```
+
+---
+
+## 7. Executor Registry
+
+Named executors with CPU/IO separation:
+
+```java
+ExecutorRegistry.register("db", ExecutorType.IO, 50);
+ExecutorRegistry.register("compute", ExecutorType.CPU);
+
+ExecutorService exec = ExecutorRegistry.get("db");
+```
+
+---
+
+## 8. Context Propagation
+
+Automatic MDC/SecurityContext propagation:
+
+```java
+ContextSnapshot snapshot = ContextSnapshot.capture();
+executor.submit(snapshot.wrap(() -> {
+    // MDC and SecurityContext available
+}));
+```
+
+---
+
+## 9. Observability
+
+### Metrics
+
+```java
+Tasks.supply("my-task", () -> doWork())
+    .listener(TaskMetrics.listener())
+    .execute();
+
+TaskMetrics.Stats stats = TaskMetrics.stats("my-task");
+```
+
+### OpenTelemetry
+
+```java
+OpenTelemetryTracing.configure(otel);
+task.listener(OpenTelemetryTracing.listener()).execute();
+```
+
+---
+
+## 10. Spring Boot Config
+
+```yaml
+fast.concurrent:
+  default-mode: virtual-thread
+  executors:
+    db:
+      type: io
+      max-threads: 50
+    compute:
+      type: cpu
+```
+
+---
 
 ## API Reference
 
-| Method | Description |
-|--------|-------------|
-| `run(Supplier)` | Submit task, returns Future |
-| `execute(Runnable)` | Fire-and-forget |
-| `get(Future)` | Block and get result |
-| `parallel(Supplier...)` | Run all, return all results |
-| `race(Supplier...)` | Return first completed |
-| `timeout(Supplier, time)` | Fail if too slow |
-| `retry(Supplier, attempts)` | Retry on failure |
-| `delay(ms, Runnable)` | Execute after delay |
-| `interval(ms, Runnable)` | Execute periodically |
-| `sleep(ms)` | Sleep current thread |
+| Class | Description |
+|-------|-------------|
+| `Tasks` | Task factory |
+| `ParallelFlow` | Fan-out/fan-in |
+| `TaskGraph` | DAG execution |
+| `TaskScope` | Structured concurrency |
+| `ParallelStream` | Bounded collections |
+| `CircuitBreaker` | Resilience |
+| `ExecutorRegistry` | Executor management |
+| `ContextSnapshot` | Context propagation |
+| `TaskMetrics` | Observability |

@@ -13,8 +13,6 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
-import static com.fast.cqrs.concurrent.VirtualThread.*;
-
 /**
  * Handler for CreateOrderCmd.
  */
@@ -33,16 +31,16 @@ public class CreateOrderHandler implements CommandHandler<CreateOrderCmd> {
     @Override
     public void handle(CreateOrderCmd cmd) {
         String orderId = cmd.orderId() != null ? cmd.orderId() : IdGenerator.prefixedId("ORD");
-        
+
         Order order = new Order();
         order.setId(orderId);
         order.setCustomerId(cmd.customerId());
         order.setTotal(cmd.total());
         order.setStatus("PENDING");
         order.setCreatedAt(LocalDateTime.now().toString());
-        
+
         orderRepository.save(order);
-        
+
         // Publish event
         eventBus.publish(new OrderCreatedEvent(orderId, cmd.customerId(), cmd.total()));
     }
