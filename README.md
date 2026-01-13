@@ -1,79 +1,200 @@
-# Fast Framework
+# fast-framework
 
-This internal framework is built on top of **Spring Boot** with the goal of **standardizing code quality across teams with different experience levels**, while keeping the system **explicit, predictable, and easy to maintain**.
+**Code fast. Run fast. Review fast.**
 
-The framework focuses on **CQRS-first design**, enforcing a clear separation between **read** and **write** logic, and intentionally **avoids ORM “magic” behaviors** that often hide performance costs and introduce subtle bugs.
+`fast-framework` is an internal Java framework built on top of **Spring Boot**, designed to help teams **move quickly without losing control**, **maintain consistent code quality**, and **scale development across developers with different experience levels**.
 
-## Core Goals
-
-1. **Ensure consistent code quality**
-   * Enforce conventions and structure regardless of developer seniority
-   * Reduce architectural drift across teams and services
-   * Make code review simpler and more objective
-
-2. **Avoid hidden ORM behavior**
-   * No implicit lazy loading
-   * No accidental N+1 queries
-   * Explicit queries, explicit transactions, explicit mapping
-   * Database access should be easy to reason about and easy to profile
-
-3. **Reduce boilerplate without losing clarity**
-   * Remove repetitive glue code (handlers, controllers, mappers)
-   * Keep business logic explicit and visible
-   * Generated code is readable and modifiable
-
-4. **Make common cases easy, uncommon cases possible**
-   * 80% of use cases require minimal configuration
-   * Advanced scenarios remain fully customizable
-   * No “framework lock-in” for edge cases
-
-5. **Lower the learning curve**
-   * Clear mental model: *Command → Handler → State change* / *Query → Handler → Read model*
-   * Minimal annotations
-   * Predictable execution flow
+The framework is built around **CQRS as a first-class architectural principle**, deliberately avoids **ORM magic**, and favors **explicit, predictable behavior**.
+The result is code that is **easy to write, easy to run, and easy to review**.
 
 ---
 
-## Design Principles
+## Motivation
 
-### 1. CQRS by Default
-* Commands and Queries are **first-class citizens**
-* No mixed read/write handlers
-* Read models are optimized for queries, not reused domain entities
+As projects grow and teams expand, the main problems are rarely syntax or tooling — they are **inconsistency**, **hidden behavior**, and **review friction**.
 
-### 2. Explicit Over Implicit
-* No magic entity state tracking
-* No automatic cascading writes
-* No hidden database calls
-* What you see in code is what actually happens at runtime
+Common issues in large Spring-based codebases:
 
-### 3. Convention Over Configuration
-* Strong package and naming conventions
+* Each service follows a slightly different structure
+* Business logic is scattered across controllers, services, and repositories
+* ORM behavior introduces hidden queries and side effects
+* Reviews require deep domain knowledge just to verify correctness
+* Junior developers can unintentionally break architectural boundaries
+
+These problems slow teams down and increase risk.
+
+`fast-framework` exists to **turn architecture into something enforceable**, not something remembered, and to make **reviews fast because structure and intent are obvious**.
+
+---
+
+## What “Fast” Means
+
+### Code Fast
+
+Developers should be able to:
+
+* Create new features with minimal setup
+* Follow conventions instead of inventing structure
+* Focus on business logic instead of infrastructure wiring
+
+`fast-framework` removes repetitive boilerplate and provides a clear execution model:
+
+* Command → Handler → State change
+* Query → Handler → Read model
+
+---
+
+### Run Fast
+
+Applications built with `fast-framework` are designed to be:
+
+* Performance-predictable
+* Easy to profile
+* Safe under load
+
+This is achieved by:
+
+* Explicit queries and transactions
+* No lazy-loading or hidden database access
+* Read models optimized for query patterns
+* Clear separation between read and write paths
+
+Performance is not accidental — it is visible in the code.
+
+---
+
+### Review Fast
+
+Reviews should focus on **business correctness**, not on deciphering structure or guessing side effects.
+
+`fast-framework` makes reviews faster by:
+
+* Enforcing a single, predictable layout across services
+* Making command and query intent explicit
+* Reducing boilerplate so reviewers see real logic
+* Preventing architectural violations before code reaches review
+* Making side effects easy to spot
+
+A reviewer should be able to understand **what changed** and **what it affects** in minutes, not hours.
+
+---
+
+## Core Design Principles
+
+### CQRS by Default
+
+* Commands and Queries are strictly separated
+* Read logic never mutates state
+* Write logic never returns complex read models
+* Each handler has one responsibility
+
+This separation improves clarity, performance, and testability.
+
+---
+
+### Explicit Over Implicit
+
+The framework intentionally avoids:
+
+* ORM state tracking
+* Automatic cascading writes
+* Hidden retries
+* Implicit asynchronous behavior
+
+If something happens, it must be visible in code.
+
+---
+
+### Convention Over Configuration
+
+* Strong naming and package conventions
 * Automatic wiring based on intent, not reflection tricks
 * Convention violations fail fast at startup
 
-### 4. Framework as Guardrail, Not Abstraction
-* The framework **guides** developers instead of hiding complexity
-* You can always drop down to plain Spring / JDBC when needed
-* No custom DSL that replaces Java or Spring idioms
+This reduces configuration noise and prevents architectural drift.
 
 ---
 
-## Capabilities
+### Guardrails, Not Abstractions
 
-### What the Framework Handles for You
-* Command / Query routing and handler discovery
-* Transaction boundary enforcement
-* Consistent exception handling
-* Logging, tracing, and metrics hooks
-* Mapping between persistence models and DTOs
-* Boilerplate controller generation
+`fast-framework` does not hide Spring or Java.
+
+Instead, it:
+
+* Constrains how features are used
+* Guides developers toward safe patterns
+* Allows escape hatches when needed
+
+You can always drop down to:
+
+* Plain Spring
+* JDBC
+* Custom SQL
+
+The framework never blocks advanced use cases.
+
+---
+
+## What fast-framework Provides
+
+* Command and Query routing
+* Handler discovery and validation
+* Transaction boundaries for commands
+* Read-only execution guarantees for queries
+* Boilerplate reduction for controllers and handlers
+* Consistent exception and error handling
+* Standard logging, tracing, and metrics hooks
 * Compile-time or startup-time convention checks
 
-### What the Framework Does NOT Do
-* No ORM state magic
-* No hidden async behavior
-* No automatic retries without visibility
+---
+
+## What fast-framework Intentionally Avoids
+
+* ❌ ORM magic
+* ❌ Event sourcing (by default)
+* ❌ Implicit messaging or async execution
+* ❌ Heavy abstractions or DSLs
+* ❌ Opinionated infrastructure dependencies
+
+---
+
+## Who This Framework Is For
+
+* **Junior developers**
+  → Can write correct code by following conventions
+
+* **Mid-level developers**
+  → Can move fast without breaking architecture
+
+* **Senior developers**
+  → Can enforce standards and spend time on real complexity
+
+---
+
+## Long-Term Vision
+
+`fast-framework` is not about adding more features.
+
+It is about:
+
+* Making systems easier to reason about
+* Making teams safer as they scale
+* Turning architecture into executable rules
+* Keeping codebases boring, predictable, and reviewable
+
+---
+
+## Summary
+
+`fast-framework` exists to remove friction from the development lifecycle:
+
+* Faster development
+* Predictable runtime behavior
+* Faster, safer reviews
+
+Not clever.
+Not magical.
+Just **fast**.
 
 ---
 
